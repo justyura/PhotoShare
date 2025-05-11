@@ -14,6 +14,8 @@ func main() {
 	r.Get("/", controllers.StaticHandler(views.Must(views.Parse("templates/home.gohtml"))))
 	r.Get("/contact", controllers.StaticHandler(views.Must(views.Parse("templates/contact.gohtml"))))
 	r.Get("/faq", controllers.StaticHandler(views.Must(views.Parse("templates/faq.gohtml"))))
+	r.Get("/signup", controllers.StaticHandler(views.Must(views.Parse("templates/signup.gohtml"))))
+
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found!", http.StatusNotFound)
 	})
