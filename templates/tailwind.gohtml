@@ -8,11 +8,36 @@
   <!-- ... -->
 </head>
 <body>
+    <header class="bg-gradient-to-r from-blue-800 to-indigo-800 text-white">
+        <nav class="px-8 py-6 flex items-center spcae-x-12">
+            <div class="text-4xl pr-14 font-serif">PhotoShare</div>
+            <div class="flex-grow">
+                <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/">Home</a>
+                <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/contact">Contact</a>
+                <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/faq">FAQ</a>
+            </div>
+            <div class="space-x-4">
+                <a href="#">Sign in</a>
+                <a href="#" class="px-4 py-2 bg-blue-700 hover:bg-blue-600 rounded">Sign up</a>
+            </div>
+        </nav>
+    </header>
 {{end}}
 
 
 {{define "footer"}}
-  <!-- ... -->
+<footer class="fixed bottom-0 left-0 z-20 w-full p-4 bg-white border-t border-gray-200 shadow-sm md:flex md:items-center md:justify-between md:p-6 dark:bg-gray-800 dark:border-gray-600">
+    <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2025 <a href="localhost:3000" class="hover:underline">PhotoShare™</a>. All Rights Reserved.
+    </span>
+    <ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0">
+        <li>
+            <a href="#" class="hover:underline pr-10 me-4 md:me-6">About</a>
+        </li>
+        <li>
+            <a href="#" class="hover:underline me-4 md:me-6">Privacy Policy</a>
+        </li>
+    </ul>
+</footer>
 </body>
 </html>
 {{end}}
