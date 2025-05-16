@@ -23,4 +23,7 @@ func main() {
 
 	fmt.Println("Starting the server on :3000...")
 	http.ListenAndServe(":3000", r)
+	var usersC controllers.Users
+	usersC.Template.New = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
+	r.Get("/signup", usersC.New)
 }
