@@ -2,16 +2,14 @@ package controllers
 
 import (
 	"net/http"
-
-	"github.com/z-wentao/PhotoShare/views"
 )
 
 type Users struct {
-	Template struct {
-		New views.Template
+	Templates struct {
+		New Template
 	}
 }
 
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
-	//TODO: render the sign up page
+	u.Templates.New.Execute(w, nil)
 }
