@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 	"github.com/z-wentao/PhotoShare/controllers"
 	"github.com/z-wentao/PhotoShare/models"
 	"github.com/z-wentao/PhotoShare/templates"
@@ -12,12 +13,6 @@ import (
 )
 
 func main() {
-	r := chi.NewRouter()
-	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))))
-	r.Get("/contact", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "contact.gohtml", "tailwind.gohtml"))))
-	r.Get("/faq", controllers.FAQ(views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))))
-	r.Get("/signup", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))))
-
 	cfg := models.DefaultPostgresConfig()
 	db, err := models.Open(cfg)
 	if err != nil {
@@ -29,12 +24,24 @@ func main() {
 		DB: db,
 	}
 
+	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
+	csrfMw := csrf.Protect(
+		[]byte(csrfKey),
+		csrf.Secure(false),
+	)
+
 	usersC := controllers.Users{
 		UserService: &userService,
 	}
 
 	usersC.Templates.New = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
 	usersC.Templates.SignIn = views.Must(views.ParseFS(templates.FS, "signin.gohtml", "tailwind.gohtml"))
+
+	r := chi.NewRouter()
+	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))))
+	r.Get("/contact", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "contact.gohtml", "tailwind.gohtml"))))
+	r.Get("/faq", controllers.FAQ(views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))))
+	r.Get("/signup", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))))
 	r.Get("/signin", usersC.SignIn)
 	r.Get("/signup", usersC.New)
 	r.Post("/signup", usersC.Create)
@@ -46,5 +53,5 @@ func main() {
 	})
 
 	fmt.Println("Starting the server on :3000...")
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":3000", csrfMw(r))
 }
