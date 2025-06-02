@@ -1,13 +1,22 @@
-# What is this project about?
-A PhotoSharing app written in Go language
+## About this project
 
-Using Chi for routing and Postgres for database.
+I started learning **Go** in April 2025 and chose to build a lightweight photo-sharing service as my hands-on playground. Each commit captures a concrete lesson—from idiomatic routing with Chi to salted-hash password storage in PostgreSQL—so the code base doubles as both a mini-app *and* a learning log.
 
-# Questions:
-## Why Chi Framework?
-1. Routing based on both the path and the HTTP method being used.
-2. Support for dynamic parameters in the routing path.
-3. Make mouting subrouters a bit easier.
-4. Provide some nice middleware.
+### Key Learning Highlights
 
-# pull test
+- **Chi-based routing** – REST-style endpoints with clean middleware stacks.
+- **Server-side templates** – safe, dynamic HTML via `html/template`.
+- **Architecture choices** – evaluated flat vs. separation-of-concerns vs. dependency-based layouts, then applied an MVC structure.
+- **Tailwind CSS** – utility-first styling for a responsive UI.
+- **Secure persistence** – bcrypt-hashed, salted passwords in PostgreSQL.
+- **Cookie auth & CSRF defense** – cookie-based login wrapped in CSRF-blocking middleware.
+
+### Tech Stack
+Go · Chi · Tailwind CSS · PostgreSQL · Docker (dev)
+
+### Roadmap
+- Image upload & cloud storage
+- User profiles and pagination
+- Deployment pipeline (Docker + Kubernetes)
+
+> The app already runs locally, but its true value is showcasing my ability to pick up a new language, weigh design options, and translate security best practices into code. More features will land as I continue refining my Go skills.
