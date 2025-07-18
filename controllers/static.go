@@ -29,7 +29,7 @@ func FAQ(tpl Template) http.HandlerFunc {
 			Answer:   "As it's named, it help sharing photo with your family and friend.",
 		},
 		{
-			Question: "How to use it",
+			Question: "How to use it?",
 			Answer:   "Sign up and log in, upload your photo and share!",
 		},
 		{

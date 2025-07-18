@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	r := chi.NewRouter()
 	cfg := models.DefaultPostgresConfig()
 	db, err := models.Open(cfg)
 	if err != nil {
@@ -27,10 +28,9 @@ func main() {
 		UserService: &userService,
 	}
 
-	usersC.Templates.New = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
 	usersC.Templates.SignIn = views.Must(views.ParseFS(templates.FS, "signin.gohtml", "tailwind.gohtml"))
+	usersC.Templates.New = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
 
-	r := chi.NewRouter()
 	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))))
 	r.Get("/contact", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "contact.gohtml", "tailwind.gohtml"))))
 	r.Get("/faq", controllers.FAQ(views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))))

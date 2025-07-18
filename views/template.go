@@ -12,17 +12,6 @@ type Template struct {
 	htmlTpl *template.Template
 }
 
-func Parse(filepath string) (Template, error) {
-	fmt.Println("Starting parse the file ...")
-	htmlTpl, err := template.ParseFiles(filepath)
-	if err != nil {
-		return Template{}, fmt.Errorf("parsing template: %w", err)
-	}
-	return Template{
-		htmlTpl: htmlTpl,
-	}, nil
-}
-
 func ParseFS(fs fs.FS, pattern ...string) (Template, error) {
 	htmlTpl, err := template.ParseFS(fs, pattern...)
 	if err != nil {
