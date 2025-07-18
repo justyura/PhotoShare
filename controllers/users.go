@@ -38,6 +38,8 @@ func (u Users) New(w http.ResponseWriter, r *http.Request) {
 func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
+	fmt.Fprintln(w, email)
+	fmt.Fprintln(w, password)
 	user, err := u.UserService.Create(email, password)
 	if err != nil {
 		fmt.Println(err)
