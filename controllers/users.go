@@ -2,11 +2,10 @@ package controllers
 
 import (
 	"fmt"
-	"html/template"
-	"net/http"
-
 	"github.com/gorilla/csrf"
 	"github.com/z-wentao/PhotoShare/models"
+	"html/template"
+	"net/http"
 )
 
 type Users struct {
