@@ -6,6 +6,9 @@
         </h1>
         <form action="/signin" method="post">
             <div>
+                {{csrfField}}
+            </div>
+            <div>
                 <label for="email" class="text-sm font-semibold text-gray-800">Email Address</label>
                 <input 
                         name="email"
