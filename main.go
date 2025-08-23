@@ -1,15 +1,17 @@
 package main
 
 import (
-    "fmt"
-    "github.com/gorilla/csrf"
-    "net/http"
+	"fmt"
+	"net/http"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/z-wentao/PhotoShare/controllers"
-    "github.com/z-wentao/PhotoShare/models"
-    "github.com/z-wentao/PhotoShare/templates"
-    "github.com/z-wentao/PhotoShare/views"
+	"github.com/gorilla/csrf"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/z-wentao/PhotoShare/controllers"
+	"github.com/z-wentao/PhotoShare/migrations"
+	"github.com/z-wentao/PhotoShare/models"
+	"github.com/z-wentao/PhotoShare/templates"
+	"github.com/z-wentao/PhotoShare/views"
 )
 
 func main() {
@@ -23,9 +25,8 @@ func main() {
     }
     defer db.Close()
     
-    // use Goose as schema migration tool
-    // open folder: migrations, read the file
-    err = models.Migrate(db, "migrations")
+    // use the embed migration files
+    err = models.MigrateFS(db, migrations.FS, ".")
     if err != nil {
 	panic(err)
     }
