@@ -17,6 +17,32 @@ type Users struct {
     SessionService *models.SessionService
 }
 
+type UserMiddleware struct {
+    SessionService *models.SessionService
+}
+
+func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	//TODO: Add logic for the SetUser middleware, then call next.ServeHTTP(w, r)
+	token, err := readCookie(r, CookieSession)
+	if err != nil {
+	    next.ServeHTTP(w, r)
+	    return
+	}
+
+	user, err := umw.SessionService.User(token)
+	if err != nil {
+	    next.ServeHTTP(w, r)
+	    return
+	}
+
+	ctx := r.Context()
+	ctx = context.WithUser(ctx, user)
+	r = r.WithContext(ctx)
+	next.ServeHTTP(w, r)
+    })
+}
+
 func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
     var data struct {
 	Email string

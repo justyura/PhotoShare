@@ -68,9 +68,13 @@ func main() {
 	http.Error(w, "Page not found!", http.StatusNotFound)
     })
 
+    umw := controllers.UserMiddleware{
+	SessionService: &sessionService,
+    }
+
     csrfKey := "abc32abcdefghijklmnopqrstuvwxyz1"
     csrfMw := csrf.Protect([]byte(csrfKey), csrf.Secure(false))
-    fmt.Println("Starting the server on :3000...")
 
-    http.ListenAndServe(":3000", csrfMw(r))
+    fmt.Println("Starting the server on :3000...")
+    http.ListenAndServe(":3000", csrfMw(umw.SetUser(r)))
 }
