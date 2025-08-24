@@ -1,17 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+    "fmt"
+    "net/http"
 
-	"github.com/gorilla/csrf"
+    "github.com/gorilla/csrf"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/z-wentao/PhotoShare/controllers"
-	"github.com/z-wentao/PhotoShare/migrations"
-	"github.com/z-wentao/PhotoShare/models"
-	"github.com/z-wentao/PhotoShare/templates"
-	"github.com/z-wentao/PhotoShare/views"
+    "github.com/go-chi/chi/v5"
+    "github.com/z-wentao/PhotoShare/controllers"
+    "github.com/z-wentao/PhotoShare/migrations"
+    "github.com/z-wentao/PhotoShare/models"
+    "github.com/z-wentao/PhotoShare/templates"
+    "github.com/z-wentao/PhotoShare/views"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	panic(err)
     }
     defer db.Close()
-    
+
     // use the embed migration files
     err = models.MigrateFS(db, migrations.FS, ".")
     if err != nil {
