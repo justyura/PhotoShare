@@ -43,6 +43,17 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
     })
 }
 
+func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
+	if user == nil {
+	    http.Redirect(w, r, "/signin", http.StatusFound)
+	    return
+	}
+	next.ServeHTTP(w, r)
+    })
+}
+
 func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
     var data struct {
 	Email string
@@ -101,6 +112,7 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
     http.Redirect(w, r, "/users/me", http.StatusFound)
 }
 
+// SetUser & RequireUser middleware need this 'CurrentUser' func
 func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
     user := context.User(r.Context())
     if user == nil {
