@@ -1,27 +1,72 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"net/http"
+	"os"
+	"strconv"
 
-    "github.com/gorilla/csrf"
+	"github.com/gorilla/csrf"
+	"github.com/joho/godotenv"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/z-wentao/PhotoShare/controllers"
-    "github.com/z-wentao/PhotoShare/migrations"
-    "github.com/z-wentao/PhotoShare/models"
-    "github.com/z-wentao/PhotoShare/templates"
-    "github.com/z-wentao/PhotoShare/views"
+	"github.com/go-chi/chi/v5"
+	"github.com/z-wentao/PhotoShare/controllers"
+	"github.com/z-wentao/PhotoShare/migrations"
+	"github.com/z-wentao/PhotoShare/models"
+	"github.com/z-wentao/PhotoShare/templates"
+	"github.com/z-wentao/PhotoShare/views"
 )
 
+type config struct {
+    PSQL models.PostgresConfig
+    SMTP models.SMTPConfig
+    CSRF struct {
+	Key string
+	Secure bool
+    }
+    Server struct {
+	Address string
+    }
+}
+
+func loadENVConfig() (config, error) {
+    var cfg config
+    err := godotenv.Load()
+    if err != nil {
+	return cfg, err
+    } 
+    //TODO: setup PSQL config
+    cfg.PSQL = models.DefaultPostgresConfig()
+    //TODO: setup SMTP config
+    cfg.SMTP.Host = os.Getenv("SMTP_HOST")
+    portStr := os.Getenv("SMTP_PORT")
+    cfg.SMTP.Port, err = strconv.Atoi(portStr)
+    if err != nil {
+	return cfg, err
+    }
+    cfg.SMTP.Username = os.Getenv("SMTP_USERNAME")
+    cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
+    //TODO: setup CSRF config
+    cfg.CSRF.Key = "abc32abcdefghijklmnopqrstuvwxyz1"
+    cfg.CSRF.Secure = false
+    //TODO: setup Server config
+    cfg.Server.Address = ":3000"
+    
+    return cfg, nil
+}
+
 func main() {
-    // Set up the DB connection
-    cfg := models.DefaultPostgresConfig()
-    db, err := models.Open(cfg)
+    cfg, err := loadENVConfig()
+    if err != nil {
+	panic(err)
+    }
+
+    db, err := models.Open(cfg.PSQL)
     if err != nil {
 	panic(err)
     }
     defer db.Close()
+
 
     // use the embed migration files
     err = models.MigrateFS(db, migrations.FS, ".")
@@ -30,30 +75,38 @@ func main() {
     }
 
     // Set up services
-    userService := models.UserService{
+    userService := &models.UserService{
 	DB: db,
     }
 
-    sessionService := models.SessionService{
+    sessionService := &models.SessionService{
 	DB: db,
     }
+
+    pwResetService := &models.PasswordRestService{
+	DB: db,
+    }
+
+    emailService := models.NewEmailService(cfg.SMTP)
     
     // Set up middlewares
     umw := controllers.UserMiddleware{
-	SessionService: &sessionService,
+	SessionService: sessionService,
     }
 
-    csrfKey := "abc32abcdefghijklmnopqrstuvwxyz1"
-    csrfMw := csrf.Protect([]byte(csrfKey), csrf.Secure(false))
+    csrfMw := csrf.Protect([]byte(cfg.CSRF.Key), csrf.Secure(cfg.CSRF.Secure))
 
     // Set up controllers
     usersC := controllers.Users{
-	UserService:    &userService,
-	SessionService: &sessionService,
+	UserService:    userService,
+	SessionService: sessionService,
+	PasswordResetService: pwResetService,
+	EmailService: emailService,
     }
 
     usersC.Templates.SignIn = views.Must(views.ParseFS(templates.FS, "signin.gohtml", "tailwind.gohtml"))
     usersC.Templates.New = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
+    usersC.Templates.ForgotPassword = views.Must(views.ParseFS(templates.FS, "forgot-pw.gohtml", "tailwind.gohtml"))
 
     // Set up router and routes
     r := chi.NewRouter()
@@ -76,8 +129,13 @@ func main() {
     r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Page not found!", http.StatusNotFound)
     })
+    r.Get("/forgot-pw", usersC.ForgotPassword)
+    r.Post("/forgot-pw", usersC.ProcessForgotPassword)
 
     // Start the server
-    fmt.Println("Starting the server on :3000...")
-    http.ListenAndServe(":3000", r)
+    fmt.Printf("Starting the server on %s...\n", cfg.Server.Address)
+    http.ListenAndServe(cfg.Server.Address, r)
+    if err != nil {
+	panic(err)
+    }
 }
