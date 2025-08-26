@@ -83,7 +83,7 @@ func main() {
 	DB: db,
     }
 
-    pwResetService := &models.PasswordRestService{
+    pwResetService := &models.PasswordResetService{
 	DB: db,
     }
 

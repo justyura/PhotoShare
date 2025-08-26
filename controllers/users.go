@@ -19,7 +19,7 @@ type Users struct {
     }
     UserService    *models.UserService
     SessionService *models.SessionService
-    PasswordResetService *models.PasswordRestService
+    PasswordResetService *models.PasswordResetService
     EmailService *models.EmailService
 }
 
@@ -173,7 +173,7 @@ func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
     }
 
     //TODO: make the url here configurable
-    resetURL := "https://www.photoshare.com/reset-pw?" + vals.Encode()
+    resetURL := "http://localhost:3000/reset-pw?" + vals.Encode()
     err = u.EmailService.ForgotPassword(data.Email, resetURL)
     if err != nil {
 	fmt.Println(err)
@@ -208,17 +208,22 @@ func (u Users) ProcessResetPassword(w http.ResponseWriter, r *http.Request) {
 	return
     }
 
-    // TODO: update the user's password
+    err = u.UserService.UpdatePassword(user.ID, data.Password)
+    if err != nil {
+	fmt.Println(err)
+	http.Error(w, "Something went wrong", http.StatusInternalServerError)
+	return
+    }
     
     // sign the user in
     // redirect to the signin page
     session, err := u.SessionService.Create(user.ID)
     if err != nil {
 	fmt.Println(err)
-	http.Redirect(w, r, "/signin", http.StatusInternalServerError)
+	http.Redirect(w, r, "/signin", http.StatusFound)
 	return
     }
 
     setCookie(w, CookieSession, session.Token)
-    http.Redirect(w, r, "/users/me", http.StatusInternalServerError)
+    http.Redirect(w, r, "/users/me", http.StatusFound)
 }
