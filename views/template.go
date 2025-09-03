@@ -1,12 +1,14 @@
 package views
 
 import (
-	"github.com/z-wentao/PhotoShare/context"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
+
+	"github.com/z-wentao/PhotoShare/context"
 
 	"github.com/gorilla/csrf"
 	"github.com/z-wentao/PhotoShare/models"
@@ -14,6 +16,10 @@ import (
 
 type Template struct {
 	htmlTpl *template.Template
+}
+
+type public interface {
+    Public() string 
 }
 
 func ParseFS(fs fs.FS, pattern ...string) (Template, error) {
@@ -39,6 +45,20 @@ func ParseFS(fs fs.FS, pattern ...string) (Template, error) {
 
 }
 
+func errMessages(errs ...error) []string {
+    var msgs []string
+    for _, err := range errs {
+	var pubErr public
+	if errors.As(err, &pubErr) {
+	    msgs = append(msgs, pubErr.Public())
+	} else {
+	    fmt.Println(err)
+	    msgs = append(msgs, "Something went wrong.")
+	}
+    }
+    return msgs
+}
+
 func (t Template) Execute(w http.ResponseWriter, r *http.Request, data any, errs ...error) {
     tpl, err := t.htmlTpl.Clone()
     if err != nil {
@@ -46,6 +66,7 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data any, errs
 	http.Error(w, "Internal Server Error while rendering the page", http.StatusInternalServerError)
 	return
     }
+    errMsgs := errMessages(errs...)
     tpl = tpl.Funcs(template.FuncMap{
 	"csrfField": func() template.HTML {
 	    return csrf.TemplateField(r)
@@ -54,11 +75,7 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data any, errs
 	    return context.User(r.Context()) 
 	},
 	"errors": func() []string {
-	    var errorMessages []string
-	    for _, err := range errs {
-		errorMessages = append(errorMessages, err.Error())
-	    }
-	    return errorMessages
+	    return errMsgs
 	},
     })
     w.Header().Set("Content-Type", "text/html; charset=utf-8")

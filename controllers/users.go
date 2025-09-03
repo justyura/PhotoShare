@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-
+	"github.com/z-wentao/PhotoShare/errors"
 	"github.com/z-wentao/PhotoShare/context"
 	"github.com/z-wentao/PhotoShare/models"
 )
@@ -83,11 +83,16 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
     }
     data.Email = r.FormValue("email")
     data.Password = r.FormValue("password")
+
     user, err := u.UserService.Create(data.Email, data.Password)
     if err != nil {
+	if errors.Is(err, models.ErrEmailTaken) {
+	    err = errors.Public(err, "That email address is already associated with an account, is that yours? Don't worry, you can reset your password.")
+	}
 	u.Templates.New.Execute(w, r, data, err)
 	return
     }
+
     session, err := u.SessionService.Create(user.ID)
     if err != nil {
 	fmt.Println(err)
