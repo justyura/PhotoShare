@@ -98,7 +98,7 @@ func main() {
 	SessionService: sessionService,
     }
 
-    csrfMw := csrf.Protect([]byte(cfg.CSRF.Key), csrf.Secure(cfg.CSRF.Secure))
+    csrfMw := csrf.Protect([]byte(cfg.CSRF.Key), csrf.Secure(cfg.CSRF.Secure), csrf.Path("/"),)
 
     // Set up controllers
     usersC := controllers.Users{
@@ -148,7 +148,12 @@ func main() {
     r.Get("/reset-pw", usersC.ResetPassword)
     r.Post("/reset-pw", usersC.ProcessResetPassword) 
 
-    r.Get("/galleries/new", galleriesC.New)
+    r.Route("/galleries", func(r chi.Router) {
+	r.Group(func(r chi.Router) {
+	    r.Use(umw.RequireUser)
+	    r.Get("/new", galleriesC.New)
+	})
+    })
 
     // Start the server
     fmt.Printf("Starting the server on %s...\n", cfg.Server.Address)
