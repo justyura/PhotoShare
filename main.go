@@ -87,6 +87,10 @@ func main() {
 	DB: db,
     }
 
+    gallerySevice := &models.GalleryService{
+	DB: db,
+    }
+
     emailService := models.NewEmailService(cfg.SMTP)
     
     // Set up middlewares
@@ -109,6 +113,14 @@ func main() {
     usersC.Templates.ForgotPassword = views.Must(views.ParseFS(templates.FS, "forgot-pw.gohtml", "tailwind.gohtml"))
     usersC.Templates.CheckYourEmail = views.Must(views.ParseFS(templates.FS, "check-your-email.gohtml", "tailwind.gohtml"))
     usersC.Templates.ResetPassword = views.Must(views.ParseFS(templates.FS, "reset-pw.gohtml", "tailwind.gohtml"))
+
+    galleriesC := controllers.Galleries{
+	GalleryService: gallerySevice,
+    }
+    galleriesC.Templates.New = views.Must(views.ParseFS(
+	templates.FS,
+	"galleries/new.gohtml", "tailwind.gohtml"))
+
 
     // Set up router and routes
     r := chi.NewRouter()
@@ -135,6 +147,8 @@ func main() {
     r.Post("/forgot-pw", usersC.ProcessForgotPassword)
     r.Get("/reset-pw", usersC.ResetPassword)
     r.Post("/reset-pw", usersC.ProcessResetPassword) 
+
+    r.Get("/galleries/new", galleriesC.New)
 
     // Start the server
     fmt.Printf("Starting the server on %s...\n", cfg.Server.Address)

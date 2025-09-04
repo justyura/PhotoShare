@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/z-wentao/PhotoShare/context"
 
@@ -23,7 +24,7 @@ type public interface {
 }
 
 func ParseFS(fs fs.FS, pattern ...string) (Template, error) {
-    tpl := template.New(pattern[0])
+    tpl := template.New(filepath.Base(pattern[0]))
     tpl = tpl.Funcs(template.FuncMap{
 	"csrfField": func() (template.HTML, error) {
 	    return "", fmt.Errorf("csrfField not implemented")

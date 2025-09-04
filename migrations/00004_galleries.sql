@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE galleries (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCE users (id),
+    user_id INT REFERENCES users (id),
     title text
 ); 
 -- +goose StatementEnd
