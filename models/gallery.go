@@ -76,3 +76,15 @@ func (service *GalleryService) ByUserID(userID int) ([]Gallery, error) {
     }
     return galleries, nil
 }
+
+func (service *GalleryService) Update (gallery *Gallery) error {
+    _, err := service.DB.Exec(`
+	UPDATE galleries
+	SET title = $2
+	WHERE id = $1
+	`, gallery.ID, gallery.Title)
+    if err != nil {
+	return fmt.Errorf("Update galleries: %w", err)
+    }
+    return nil
+}
