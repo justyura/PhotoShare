@@ -24,7 +24,7 @@ func (service *GalleryService) Create(title string, userID int) (*Gallery, error
 
     row := service.DB.QueryRow(`
 	INSERT INTO galleries (title, user_id)
-	VALUE ($1, $2) RETURNING id;`, title, userID)
+	VALUES ($1, $2) RETURNING id;`, title, userID)
     err := row.Scan(&gallery.ID)
     if err != nil {
 	return nil, fmt.Errorf("create gallery: %w", err)
