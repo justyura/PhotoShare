@@ -1,75 +1,85 @@
 {{define "header"}}
 <!doctype html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="min-h-screen bg-gray-100">
-    <header class="bg-gradient-to-r from-blue-800 to-indigo-800 text-white">
-        <nav class="px-8 py-6 flex items-center spcae-x-12">
-            <div class="text-4xl pr-14 font-serif">PhotoShare</div>
-            <div class="flex-grow">
-                <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/">Home</a>
-                <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/contact">Contact</a>
-                <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/faq">FAQ</a>
-            </div>
-            <div class="space-x-4">
-                {{if currentUser}}
+    <head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="min-h-screen bg-gray-100">
+	<header class="bg-gradient-to-r from-blue-800 to-indigo-800 text-white">
+	    <nav class="px-8 py-6 flex items-center spcae-x-12">
+		<div class="text-4xl pr-14 font-serif">PhotoShare</div>
+		<div class="">
+		    <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/">Home</a>
+		    <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/contact">Contact</a>
+		    <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/faq">FAQ</a>
+		</div>
+		{{if currentUser}}
+		<div class="flex-grow flex flex-row-reverse"> 
+		    <a class="text-lg font-semibold hover:text-blue-100 pr-8" href="/galleries">
+			My Galleries
+		    </a> 
+		</div> 
+		{{else}} 
+		<div class="flex-grow">
+		</div>
+		{{end}}
+		<div class="space-x-4">
+		    {{if currentUser}}
 		    <form action="/signout" method="post" class="inline pr-4">
 			<div class="hidden">
 			    {{csrfField}}
 			</div>
 			<button type="submit">Sign out</button>
 		    </form>
-		{{else}}
+		    {{else}}
 		    <a href="/signin">Sign in</a>
 		    <a href="/signup" class="px-4 py-2 bg-blue-700 hover:bg-blue-600 rounded">Sign up</a>
-                {{end}}
-            </div>
-        </nav>
-    </header>
-    <!-- Alerts --> 
-    {{if errors}}
+		    {{end}}
+		</div>
+	    </nav>
+	</header>
+	<!-- Alerts --> 
+	{{if errors}}
 	<div class="py-4 px-2">
 	    {{range errors}}
-		<div class="flex closeable bg-red-100 rounded px-2 py-2 text-red-800 mb-2">
-		    <div class="flex-grow"> 
-			{{.}}
-		    </div> 
-		    <a href="#" onclick="closeAlert(event)"> 
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"> 
-			    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /> 
-			</svg> 
-		    </a>
+	    <div class="flex closeable bg-red-100 rounded px-2 py-2 text-red-800 mb-2">
+		<div class="flex-grow"> 
+		    {{.}}
 		</div> 
+		<a href="#" onclick="closeAlert(event)"> 
+		    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"> 
+			<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /> 
+		    </svg> 
+		</a>
+	    </div> 
 	    {{end}}
 	</div> 
-    {{end}}
-{{end}}
+	{{end}}
+	{{end}}
 
-<!--  each page's content gose here. -->
+	<!--  each page's content gose here. -->
 
-{{define "footer"}}
-<footer class="fixed bottom-0 left-0 z-20 w-full p-4 bg-white border-t border-gray-200 shadow-sm md:flex md:items-center md:justify-between md:p-6 dark:bg-gray-800 dark:border-gray-600">
-    <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2025 <a href="localhost:3000" class="hover:underline">PhotoShare™</a>. All Rights Reserved.
-    </span>
-    <ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0">
-        <li>
-            <a href="#" class="hover:underline pr-10 me-4 md:me-6">About</a>
-        </li>
-        <li>
-            <a href="#" class="hover:underline me-4 md:me-6">Privacy Policy</a>
-        </li>
-    </ul>
-</footer>
-<script>
-    function closeAlert(event) {
-	let closeable = event.target.closest(".closeable");
-	closeable.remove();
-    }
-</script>
-</body >
+	{{define "footer"}}
+	<footer class="fixed bottom-0 left-0 z-20 w-full p-4 bg-white border-t border-gray-200 shadow-sm md:flex md:items-center md:justify-between md:p-6 dark:bg-gray-800 dark:border-gray-600">
+	    <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2025 <a href="localhost:3000" class="hover:underline">PhotoShare™</a>. All Rights Reserved.
+	    </span>
+	    <ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0">
+		<li>
+		    <a href="#" class="hover:underline pr-10 me-4 md:me-6">About</a>
+		</li>
+		<li>
+		    <a href="#" class="hover:underline me-4 md:me-6">Privacy Policy</a>
+		</li>
+	    </ul>
+	</footer>
+	<script>
+	function closeAlert(event) {
+	    let closeable = event.target.closest(".closeable");
+	    closeable.remove();
+	}
+	</script>
+    </body >
 </html>
 {{end}}
