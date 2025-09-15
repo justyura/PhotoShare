@@ -3,3 +3,6 @@
 PhotoShare
 /cmd
 .env
+
+# Images directory in development
+images/

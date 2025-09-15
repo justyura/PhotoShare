@@ -1,15 +1,14 @@
 package controllers
 
 import (
-    "errors"
-    "math/rand"
-    "fmt"
-    "net/http"
-    "strconv"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/z-wentao/PhotoShare/context"
-    "github.com/z-wentao/PhotoShare/models"
+	"github.com/go-chi/chi/v5"
+	"github.com/z-wentao/PhotoShare/context"
+	"github.com/z-wentao/PhotoShare/models"
 )
 
 type Galleries struct {
@@ -111,18 +110,29 @@ func (g Galleries) Show(w http.ResponseWriter, r *http.Request) {
     if err != nil {
 	return
     }
+    type Image struct {
+	GalleryID int
+	Filename string
+    }
 
     var data struct {
 	ID int
 	Title string
-	Images []string
+	Images []Image
     }
     data.ID = gallery.ID
     data.Title = gallery.Title
-    for range 30 {
-	w, h := rand.Intn(500)+200, rand.Intn(500) + 200 
-	catImageURL := fmt.Sprintf("https://placecats.com/%d/%d", w, h) 
-	data.Images = append(data.Images, catImageURL) 
+    images, err := g.GalleryService.Images(gallery.ID)
+    if err != nil {
+	fmt.Println(err)
+	http.Error(w, "Something went wrong", http.StatusInternalServerError)
+	return
+    }
+    for _, image := range images {
+	data.Images = append(data.Images, Image{
+	    GalleryID: image.GalleryID,
+	    Filename: image.Filename,
+	})
     }
     g.Templates.Show.Execute(w, r, data)
 }
@@ -173,4 +183,33 @@ func (g Galleries) Delete (w http.ResponseWriter, r *http.Request) {
 	return
     }
     http.Redirect(w, r, "/galleries", http.StatusFound)
+}
+
+func (g Galleries) Image(w http.ResponseWriter, r *http.Request) {
+    filename := chi.URLParam(r, "filename")
+    galleryID, err := strconv.Atoi(chi.URLParam(r, "id"))
+    if err != nil {
+	http.Error(w, "Invalid ID", http.StatusNotFound)
+	return
+    }
+    images, err := g.GalleryService.Images(galleryID)
+    if err != nil {
+	fmt.Println(err)
+	http.Error(w, "Something went wrong", http.StatusInternalServerError)
+	return
+    }
+    var requestedImage models.Image
+    imageFound := false
+    for _, image := range images {
+	if image.Filename == filename {
+	    requestedImage = image
+	    imageFound = true
+	    break
+	}
+    }
+    if !imageFound {
+	http.Error(w, "Image not found", http.StatusNotFound)
+	return
+    }
+    http.ServeFile(w, r, requestedImage.Path)
 }
