@@ -169,3 +169,15 @@ func (service *GalleryService) Image(galleryID int, filename string) (Image, err
 	Path: imagePath,
     }, nil
 } 
+
+func (service *GalleryService) DeleteImage(galleryID int, filename string) error {
+    image, err := service.Image(galleryID, filename)
+    if err != nil {
+	return fmt.Errorf("deleting image: %w", err)
+    }
+    err = os.Remove(image.Path)
+    if err != nil {
+	return fmt.Errorf("deleting image: %w", err)
+    }
+    return nil
+}
