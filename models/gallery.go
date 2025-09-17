@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -178,6 +179,26 @@ func (service *GalleryService) DeleteImage(galleryID int, filename string) error
     err = os.Remove(image.Path)
     if err != nil {
 	return fmt.Errorf("deleting image: %w", err)
+    }
+    return nil
+}
+
+func (service *GalleryService) CreateImage(galleryID int, filename string, contents io.Reader) error {
+    galleryDir := service.galleryDir(galleryID)
+    err := os.MkdirAll(galleryDir, 0755)
+    if err != nil {
+	return fmt.Errorf("creating gallery-%d images directory: %w", galleryID, err)
+    }
+    imagePath := filepath.Join(galleryDir, filename)
+    dst, err := os.Create(imagePath)
+    if err != nil {
+	return fmt.Errorf("creating image file: %w", err)
+    }
+    defer dst.Close()
+    
+    _, err = io.Copy(dst, contents)
+    if err != nil {
+	return fmt.Errorf("copying contentes to image: %w", err)
     }
     return nil
 }
