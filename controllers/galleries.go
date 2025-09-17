@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -207,7 +208,7 @@ func (g Galleries) Delete (w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Galleries) Image(w http.ResponseWriter, r *http.Request) {
-    filename := chi.URLParam(r, "filename")
+    filename := g.filename(w, r)
     galleryID, err := strconv.Atoi(chi.URLParam(r, "id"))
     if err != nil {
 	http.Error(w, "Invalid ID", http.StatusNotFound)
@@ -228,7 +229,7 @@ func (g Galleries) Image(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Galleries) DeleteImage (w http.ResponseWriter, r *http.Request) {
-    filename := chi.URLParam(r, "filename")
+    filename := g.filename(w, r)
     gallery, err := g.galleryByID(w, r, userMustOwnGallery)
     if err != nil {
 	return
@@ -240,4 +241,10 @@ func (g Galleries) DeleteImage (w http.ResponseWriter, r *http.Request) {
     }
     editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
     http.Redirect(w, r, editPath, http.StatusFound)
+}
+
+func (g Galleries) filename (w http.ResponseWriter, r *http.Request) string {
+    filename := chi.URLParam(r, "filename")
+    filename = path.Base(filename)
+    return filename
 }

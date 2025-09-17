@@ -29,6 +29,9 @@
 	    </button> 
 	</div>
     </form> 
+    <div class="py-4"> 
+	{{template "upload_image_form" .}} 
+    </div>
     <!-- Images -->
     <div class="py-4">
 	<h2 class="pb-2 text-sm font-semibold text-gray-800">
@@ -58,3 +61,25 @@
     </div> 
 </div> 
 {{template "footer" .}} 
+
+{{define "upload_image_form"}}
+<form action="/galleries/{{.ID}}/images" 
+    method="post" 
+    enctype="multipart/form-data">
+    {{csrfField}}
+    <div class="py-2">
+	<label for="images" 
+	    class="block mb-2 text-sm font-semibold text-gray-800">
+	    Add Images 
+	    <p class="py-2 text-xs text-gray-600 font-normal"> 
+		Please only upload jpg, png, and gif files. 
+	    </p> 
+	</label>
+	<input type="file" multiple accept="image/png, image/jpeg, image/gif" id="images" name="images" />
+    </div> 
+    <button type="submit" 
+	class=" py-2 px-8 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-bold rounded "> 
+	Upload 
+    </button> 
+</form> 
+{{end}}
