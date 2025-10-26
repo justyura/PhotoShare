@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.test { 
+    font-size: 10rem; 
+}
+.another-test { 
+    font-size: 2rem;
+} 

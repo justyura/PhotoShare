@@ -215,5 +215,5 @@ func (service *GalleryService) CreateImage(galleryID int, filename string, conte
 }
 
 func (service *GalleryService) imageContentTypes() []string {
-    return []string{"image/png", "image/jpg", "image/gif"}
+    return []string{"image/png", "image/jpg", "image/jpeg","image/gif"}
 } 

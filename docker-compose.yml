@@ -1,3 +1,4 @@
+# Only put things in this file that we want in every environment. 
 version: "3.9"
 
 services:
@@ -5,11 +6,9 @@ services:
     image: postgres
     restart: always
     environment:
-      POSTGRES_USER: yura
-      POSTGRES_PASSWORD: yura
-      POSTGRES_DB: photoshare
-    ports:
-      - 5432:5432
+      POSTGRES_USER: ${PSQL_USER}
+      POSTGRES_PASSWORD: ${PSQL_PASSWORD}
+      POSTGRES_DB: ${PSQL_DATABASE}
 
   adminer:
     image: adminer

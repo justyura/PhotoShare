@@ -6,3 +6,6 @@ PhotoShare
 
 # Images directory in development
 images/
+
+# node stuff
+node_modules/
