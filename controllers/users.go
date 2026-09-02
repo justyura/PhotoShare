@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"fmt"
-	"net/http"
-	"net/url"
-	"github.com/z-wentao/PhotoShare/errors"
-	"github.com/z-wentao/PhotoShare/context"
-	"github.com/z-wentao/PhotoShare/models"
+    "fmt"
+    "net/http"
+    "net/url"
+    "github.com/z-wentao/PhotoShare/errors"
+    "github.com/z-wentao/PhotoShare/context"
+    "github.com/z-wentao/PhotoShare/models"
 )
 
 type Users struct {
@@ -148,9 +148,8 @@ func (u Users) ProcessSignOut(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Something went wrong.", http.StatusInternalServerError)
 	return
     }
-    //	TODO: Delete the user's cookie
     deleteCookie(w, CookieSession)
-    http.Redirect(w, r, "/users/me", http.StatusFound)
+    http.Redirect(w, r, "/signin", http.StatusFound)
 }
 
 func (u Users) ForgotPassword(w http.ResponseWriter, r *http.Request) {
@@ -189,7 +188,7 @@ func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
 	return
     }
 
-    u.Templates.ForgotPassword.Execute(w, r, data) 
+    u.Templates.CheckYourEmail.Execute(w, r, data) 
 }
 
 func (u Users) ResetPassword(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +221,7 @@ func (u Users) ProcessResetPassword(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Something went wrong", http.StatusInternalServerError)
 	return
     }
-    
+
     // sign the user in
     // redirect to the signin page
     session, err := u.SessionService.Create(user.ID)
@@ -232,6 +231,7 @@ func (u Users) ProcessResetPassword(w http.ResponseWriter, r *http.Request) {
 	return
     }
 
+    // success: cookie ← session
     setCookie(w, CookieSession, session.Token)
-    http.Redirect(w, r, "/users/me", http.StatusFound)
+    http.Redirect(w, r, "/galleries", http.StatusFound)
 }

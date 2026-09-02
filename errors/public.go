@@ -4,13 +4,14 @@ package errors
 // `Public() string` method that will return a message that is 
 // acceptable to display to the public. This error can also be 
 // unwrapped using the traditional `errors` package approach. 
-func Public(err error, msg string) error{
-    return publicError{err, msg}
-}
 
 type publicError struct {
     err error
     msg string
+}
+
+func Public(err error, msg string) error{
+    return publicError{err, msg}
 }
 
 func (pe publicError) Error() string {

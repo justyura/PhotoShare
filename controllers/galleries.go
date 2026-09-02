@@ -1,16 +1,16 @@
 package controllers
 
 import (
-	"errors"
-	"fmt"
-	"net/http"
-	"net/url"
-	"path"
-	"strconv"
+    "errors"
+    "fmt"
+    "net/http"
+    "net/url"
+    "path"
+    "strconv"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/z-wentao/PhotoShare/context"
-	"github.com/z-wentao/PhotoShare/models"
+    "github.com/go-chi/chi/v5"
+    "github.com/z-wentao/PhotoShare/context"
+    "github.com/z-wentao/PhotoShare/models"
 )
 
 type Galleries struct {
@@ -254,6 +254,7 @@ func (g Galleries) UploadImage (w http.ResponseWriter, r *http.Request) {
     if err != nil {
 	return
     }
+    // for speed, 5MB in memory, else in storage
     err = r.ParseMultipartForm(5 << 20)
     if err != nil {
 	http.Error(w, "Something went wrong", http.StatusInternalServerError)
