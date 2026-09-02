@@ -1,4 +1,4 @@
-# Only put things in this file that we want in every environment. 
+# Only put things in this file that we want in every environment.
 version: "3.9"
 
 services:
