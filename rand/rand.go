@@ -25,3 +25,11 @@ func String(n int) (string, error) {
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
 }
+
+func URLSafeString(n int) (string, error) {
+	b, err := Bytes(n)
+	if err != nil {
+		return "", fmt.Errorf("url safe string: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}

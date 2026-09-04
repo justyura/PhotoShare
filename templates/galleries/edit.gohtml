@@ -1,5 +1,5 @@
 {{ define "delete_image_form" }}
-<form action="/galleries/{{.GalleryID}}/images/{{.FilenameEscaped}}/delete" 
+<form action="/images/{{.UUID}}/delete" 
     method="post" 
     onsubmit="return confirm('Do you really want to delete this image?');"> 
     {{csrfField}} 
@@ -43,7 +43,7 @@
 		<div class="absolute top-2 right-2"> 
 		    {{template "delete_image_form" .}}
 		</div>
-		<img class="w-full" src="/galleries/{{.GalleryID}}/images/{{.FilenameEscaped}}">
+		<img class="w-full" src="/i/{{.UUID}}{{.Ext}}" alt="{{.OrigName}}" loading="lazy">
 	    </div>
 	    {{end}}
 	</div>

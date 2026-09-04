@@ -97,6 +97,10 @@ func main() {
 		DB: db,
 	}
 
+	imageService := &models.ImageService{
+		DB: db,
+	}
+
 	emailService := models.NewEmailService(cfg.SMTP)
 
 	// Set up middlewares
@@ -122,11 +126,17 @@ func main() {
 
 	galleriesC := controllers.Galleries{
 		GalleryService: gallerySevice,
+		ImageService:   imageService,
 	}
 	galleriesC.Templates.New = views.Must(views.ParseFS(templates.FS, "galleries/new.gohtml", "tailwind.gohtml"))
 	galleriesC.Templates.Edit = views.Must(views.ParseFS(templates.FS, "galleries/edit.gohtml", "tailwind.gohtml"))
 	galleriesC.Templates.Index = views.Must(views.ParseFS(templates.FS, "galleries/index.gohtml", "tailwind.gohtml"))
 	galleriesC.Templates.Show = views.Must(views.ParseFS(templates.FS, "galleries/show.gohtml", "tailwind.gohtml"))
+
+	imagesC := controllers.Images{
+		ImageService:   imageService,
+		GalleryService: gallerySevice,
+	}
 
 	// Set up router and routes
 	r := chi.NewRouter()
@@ -153,9 +163,12 @@ func main() {
 	r.Get("/reset-pw", usersC.ResetPassword)
 	r.Post("/reset-pw", usersC.ProcessResetPassword)
 
+	// Public direct link. Deliberately short and detached from the gallery
+	// path: this is the URL people paste elsewhere.
+	r.Get("/i/{key}", imagesC.Show)
+
 	r.Route("/galleries", func(r chi.Router) {
 		r.Get("/{id}", galleriesC.Show)
-		r.Get("/{id}/images/{filename}", galleriesC.Image)
 		r.Group(func(r chi.Router) {
 			r.Use(umw.RequireUser)
 			r.Get("/", galleriesC.Index)
@@ -164,9 +177,15 @@ func main() {
 			r.Get("/{id}/edit", galleriesC.Edit)
 			r.Post("/{id}", galleriesC.Update)
 			r.Post("/{id}/delete", galleriesC.Delete)
-			r.Post("/{id}/images/{filename}/delete", galleriesC.DeleteImage)
 			r.Post("/{id}/images", galleriesC.UploadImage)
 		})
+	})
+
+	// An image is identified by its uuid alone, so deleting one does not need
+	// to know which gallery it sits in.
+	r.Route("/images", func(r chi.Router) {
+		r.Use(umw.RequireUser)
+		r.Post("/{key}/delete", imagesC.Delete)
 	})
 
 	// Start the server
