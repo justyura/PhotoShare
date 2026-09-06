@@ -2,11 +2,12 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/z-wentao/PhotoShare/context"
 	"github.com/z-wentao/PhotoShare/errors"
 	"github.com/z-wentao/PhotoShare/models"
-	"net/http"
-	"net/url"
 )
 
 type Users struct {
@@ -29,7 +30,7 @@ type UserMiddleware struct {
 
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//TODO: Add logic for the SetUser middleware, then call next.ServeHTTP(w, r)
+		// TODO: Add logic for the SetUser middleware, then call next.ServeHTTP(w, r)
 		token, err := readCookie(r, CookieSession)
 		if err != nil {
 			next.ServeHTTP(w, r)
@@ -113,7 +114,7 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 	user, err := u.UserService.Authenticate(data.Email, data.Password)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+		u.Templates.SignIn.Execute(w, r, data, errors.Public(err, "Invalid email address or password."))
 		return
 	}
 	session, err := u.SessionService.Create(user.ID)
@@ -168,8 +169,8 @@ func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	pwReset, err := u.PasswordResetService.Create(data.Email)
 	if err != nil {
-		//TODO: Handle other cases.
-		//like: a user don't exist with the email address.
+		// TODO: Handle other cases.
+		// like: a user don't exist with the email address.
 		fmt.Println(err)
 		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
 		return
@@ -179,7 +180,7 @@ func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
 		"token": {pwReset.Token},
 	}
 
-	//TODO: make the url here configurable
+	// TODO: make the url here configurable
 	resetURL := "http://localhost:3000/reset-pw?" + vals.Encode()
 	err = u.EmailService.ForgotPassword(data.Email, resetURL)
 	if err != nil {
