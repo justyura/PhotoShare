@@ -18,8 +18,10 @@ type Galleries struct {
 		Edit  Template
 		Index Template
 	}
-	GalleryService *models.GalleryService
-	ImageService   *models.ImageService
+	GalleryService  *models.GalleryService
+	ImageService    *models.ImageService
+	APITokenService *models.APITokenService
+	BaseURL         string
 }
 
 func (g Galleries) New(w http.ResponseWriter, r *http.Request) {
@@ -71,26 +73,85 @@ func (g Galleries) templateImages(galleryID int) ([]templateImage, error) {
 	return result, nil
 }
 
-func (g Galleries) Edit(w http.ResponseWriter, r *http.Request) {
-	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
-	if err != nil {
-		return
-	}
-	var data struct {
-		ID     int
-		Title  string
-		Images []templateImage
-	}
+type templateToken struct {
+	ID int
+}
 
+type editData struct {
+	ID       int
+	Title    string
+	Images   []templateImage
+	Tokens   []templateToken
+	BaseURL  string
+	NewToken string
+}
+
+func (g Galleries) editPage(w http.ResponseWriter, r *http.Request, gallery *models.Gallery, newToken string) {
+	var data editData
 	data.ID = gallery.ID
 	data.Title = gallery.Title
+	data.BaseURL = g.BaseURL
+	data.NewToken = newToken
+
+	var err error
 	data.Images, err = g.templateImages(gallery.ID)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
+	tokens, err := g.APITokenService.ByGalleryID(gallery.ID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	for _, t := range tokens {
+		data.Tokens = append(data.Tokens, templateToken{ID: t.ID})
+	}
 	g.Templates.Edit.Execute(w, r, data)
+}
+
+func (g Galleries) Edit(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+	g.editPage(w, r, gallery, "")
+}
+
+func (g Galleries) CreateToken(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+	token, err := g.APITokenService.Create(gallery.UserID, gallery.ID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	g.editPage(w, r, gallery, token.Token)
+}
+
+func (g Galleries) DeleteToken(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+	tokenID, err := strconv.Atoi(chi.URLParam(r, "tokenID"))
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusNotFound)
+		return
+	}
+	err = g.APITokenService.Delete(tokenID, gallery.UserID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
+	http.Redirect(w, r, editPath, http.StatusFound)
 }
 
 func (g Galleries) Update(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +160,6 @@ func (g Galleries) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// parse the updated info and update
 	title := r.FormValue("title")
 	gallery.Title = title
 	err = g.GalleryService.Update(gallery)
@@ -219,6 +279,7 @@ func (g Galleries) UploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// for speed, 5MB in memory, else in storage
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 	err = r.ParseMultipartForm(5 << 20)
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)

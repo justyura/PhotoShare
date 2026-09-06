@@ -25,7 +25,9 @@ type config struct {
 		Secure bool
 	}
 	Server struct {
-		Address string
+		Address   string
+		BaseURL   string
+		ImagesDir string
 	}
 }
 
@@ -58,6 +60,8 @@ func loadENVConfig() (config, error) {
 	cfg.CSRF.Secure = os.Getenv("CSRF_SECURE") == "true"
 
 	cfg.Server.Address = os.Getenv("SERVER_ADDRESS")
+	cfg.Server.BaseURL = os.Getenv("BASE_URL")
+	cfg.Server.ImagesDir = os.Getenv("IMAGES_DIR")
 
 	return cfg, nil
 }
@@ -98,6 +102,11 @@ func main() {
 	}
 
 	imageService := &models.ImageService{
+		DB:        db,
+		ImagesDir: cfg.Server.ImagesDir,
+	}
+
+	apiTokenService := &models.APITokenService{
 		DB: db,
 	}
 
@@ -125,8 +134,10 @@ func main() {
 	usersC.Templates.ResetPassword = views.Must(views.ParseFS(templates.FS, "reset-pw.gohtml", "tailwind.gohtml"))
 
 	galleriesC := controllers.Galleries{
-		GalleryService: gallerySevice,
-		ImageService:   imageService,
+		GalleryService:  gallerySevice,
+		ImageService:    imageService,
+		APITokenService: apiTokenService,
+		BaseURL:         cfg.Server.BaseURL,
 	}
 	galleriesC.Templates.New = views.Must(views.ParseFS(templates.FS, "galleries/new.gohtml", "tailwind.gohtml"))
 	galleriesC.Templates.Edit = views.Must(views.ParseFS(templates.FS, "galleries/edit.gohtml", "tailwind.gohtml"))
@@ -138,54 +149,75 @@ func main() {
 		GalleryService: gallerySevice,
 	}
 
+	apiC := controllers.API{
+		APITokenService: apiTokenService,
+		ImageService:    imageService,
+		BaseURL:         cfg.Server.BaseURL,
+	}
+
 	// Set up router and routes
 	r := chi.NewRouter()
 
-	r.Use(csrfMw)
-	r.Use(umw.SetUser)
-	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))))
-	r.Get("/contact", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "contact.gohtml", "tailwind.gohtml"))))
-	r.Get("/faq", controllers.FAQ(views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))))
-	r.Get("/signup", usersC.New)
-	r.Post("/signup", usersC.Create)
-	r.Get("/signin", usersC.SignIn)
-	r.Post("/signin", usersC.ProcessSignIn)
-	r.Route("/users/me", func(r chi.Router) {
-		r.Use(umw.RequireUser)
-		r.Get("/", usersC.CurrentUser)
-	})
-	r.Post("/signout", usersC.ProcessSignOut)
-	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "Page not found!", http.StatusNotFound)
-	})
-	r.Get("/forgot-pw", usersC.ForgotPassword)
-	r.Post("/forgot-pw", usersC.ProcessForgotPassword)
-	r.Get("/reset-pw", usersC.ResetPassword)
-	r.Post("/reset-pw", usersC.ProcessResetPassword)
-
-	// Public direct link. Deliberately short and detached from the gallery
-	// path: this is the URL people paste elsewhere.
+	// Public direct links: no session, no CSRF. Kept outside the web group so
+	// that serving an image does not pay for a session lookup.
 	r.Get("/i/{key}", imagesC.Show)
 
-	r.Route("/galleries", func(r chi.Router) {
-		r.Get("/{id}", galleriesC.Show)
-		r.Group(func(r chi.Router) {
+	// The API branch. RequireToken reads the Authorization header and never
+	// touches the session cookie — if it did, browsers would attach that
+	// cookie automatically and the CSRF hole would be right back.
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(apiC.RequireToken)
+		r.Post("/upload", apiC.Upload)
+	})
+
+	// The web branch: session cookie plus CSRF protection.
+	r.Group(func(r chi.Router) {
+		r.Use(csrfMw)
+		r.Use(umw.SetUser)
+
+		r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))))
+		r.Get("/contact", controllers.StaticHandler(views.Must(views.ParseFS(templates.FS, "contact.gohtml", "tailwind.gohtml"))))
+		r.Get("/faq", controllers.FAQ(views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))))
+		r.Get("/signup", usersC.New)
+		r.Post("/signup", usersC.Create)
+		r.Get("/signin", usersC.SignIn)
+		r.Post("/signin", usersC.ProcessSignIn)
+		r.Route("/users/me", func(r chi.Router) {
 			r.Use(umw.RequireUser)
-			r.Get("/", galleriesC.Index)
-			r.Get("/new", galleriesC.New)
-			r.Post("/", galleriesC.Create)
-			r.Get("/{id}/edit", galleriesC.Edit)
-			r.Post("/{id}", galleriesC.Update)
-			r.Post("/{id}/delete", galleriesC.Delete)
-			r.Post("/{id}/images", galleriesC.UploadImage)
+			r.Get("/", usersC.CurrentUser)
+		})
+		r.Post("/signout", usersC.ProcessSignOut)
+		r.Get("/forgot-pw", usersC.ForgotPassword)
+		r.Post("/forgot-pw", usersC.ProcessForgotPassword)
+		r.Get("/reset-pw", usersC.ResetPassword)
+		r.Post("/reset-pw", usersC.ProcessResetPassword)
+
+		r.Route("/galleries", func(r chi.Router) {
+			r.Get("/{id}", galleriesC.Show)
+			r.Group(func(r chi.Router) {
+				r.Use(umw.RequireUser)
+				r.Get("/", galleriesC.Index)
+				r.Get("/new", galleriesC.New)
+				r.Post("/", galleriesC.Create)
+				r.Get("/{id}/edit", galleriesC.Edit)
+				r.Post("/{id}", galleriesC.Update)
+				r.Post("/{id}/delete", galleriesC.Delete)
+				r.Post("/{id}/images", galleriesC.UploadImage)
+				r.Post("/{id}/tokens", galleriesC.CreateToken)
+				r.Post("/{id}/tokens/{tokenID}/delete", galleriesC.DeleteToken)
+			})
+		})
+
+		// An image is identified by its uuid alone, so deleting one does not
+		// need to know which gallery it sits in.
+		r.Route("/images", func(r chi.Router) {
+			r.Use(umw.RequireUser)
+			r.Post("/{key}/delete", imagesC.Delete)
 		})
 	})
 
-	// An image is identified by its uuid alone, so deleting one does not need
-	// to know which gallery it sits in.
-	r.Route("/images", func(r chi.Router) {
-		r.Use(umw.RequireUser)
-		r.Post("/{key}/delete", imagesC.Delete)
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Page not found!", http.StatusNotFound)
 	})
 
 	// Start the server
