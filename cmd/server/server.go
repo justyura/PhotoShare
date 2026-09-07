@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,8 +36,8 @@ type config struct {
 func loadENVConfig() (config, error) {
 	var cfg config
 	err := godotenv.Load()
-	if err != nil {
-		return cfg, err
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return cfg, fmt.Errorf("load .env: %w", err)
 	}
 	cfg.PSQL = models.PostgresConfig{
 		Host:     os.Getenv("PSQL_HOST"),
