@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/z-wentao/PhotoShare/context"
@@ -84,6 +85,8 @@ type editData struct {
 	Tokens   []templateToken
 	BaseURL  string
 	NewToken string
+	IsPublic bool
+	ShareURL string
 }
 
 func (g Galleries) editPage(w http.ResponseWriter, r *http.Request, gallery *models.Gallery, newToken string) {
@@ -92,6 +95,10 @@ func (g Galleries) editPage(w http.ResponseWriter, r *http.Request, gallery *mod
 	data.Title = gallery.Title
 	data.BaseURL = g.BaseURL
 	data.NewToken = newToken
+	data.IsPublic = gallery.IsPublic
+	if gallery.ShareID != "" {
+		data.ShareURL = strings.TrimRight(g.BaseURL, "/") + "/g/" + gallery.ShareID
+	}
 
 	var err error
 	data.Images, err = g.templateImages(gallery.ID)
@@ -197,10 +204,31 @@ func (g Galleries) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Galleries) Show(w http.ResponseWriter, r *http.Request) {
-	gallery, err := g.galleryByID(w, r)
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
 	if err != nil {
 		return
 	}
+	g.showPage(w, r, gallery)
+}
+
+func (g Galleries) ShowShared(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.GalleryService.ByShareID(chi.URLParam(r, "shareID"))
+	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			http.Error(w, "Gallery not found", http.StatusNotFound)
+			return
+		}
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	// Shared galleries are unlisted capability links, not indexable public pages.
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Robots-Tag", "noindex, nofollow")
+	g.showPage(w, r, gallery)
+}
+
+func (g Galleries) showPage(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) {
 	var data struct {
 		ID     int
 		Title  string
@@ -208,13 +236,32 @@ func (g Galleries) Show(w http.ResponseWriter, r *http.Request) {
 	}
 	data.ID = gallery.ID
 	data.Title = gallery.Title
-	data.Images, err = g.templateImages(gallery.ID)
+	images, err := g.templateImages(gallery.ID)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
+	data.Images = images
 	g.Templates.Show.Execute(w, r, data)
+}
+
+func (g Galleries) SetSharing(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+
+	isPublic := r.FormValue("is_public") == "true"
+	err = g.GalleryService.SetPublic(gallery, isPublic)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
+	http.Redirect(w, r, editPath, http.StatusFound)
 }
 
 type galleryOpt func(http.ResponseWriter, *http.Request, *models.Gallery) error
@@ -245,8 +292,9 @@ func (g Galleries) galleryByID(w http.ResponseWriter, r *http.Request, opts ...g
 
 func userMustOwnGallery(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error {
 	user := context.User(r.Context())
-	if user.ID != gallery.UserID {
-		http.Error(w, "You are not authorized to edit this gallery", http.StatusForbidden)
+	if user == nil || user.ID != gallery.UserID {
+		// Do not confirm that another user's numeric gallery ID exists.
+		http.Error(w, "Gallery not found", http.StatusNotFound)
 		return fmt.Errorf("user does not have access to this gallery")
 	}
 	return nil

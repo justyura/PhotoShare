@@ -193,18 +193,20 @@ func main() {
 		r.Post("/forgot-pw", usersC.ProcessForgotPassword)
 		r.Get("/reset-pw", usersC.ResetPassword)
 		r.Post("/reset-pw", usersC.ProcessResetPassword)
+		r.Get("/g/{shareID}", galleriesC.ShowShared)
 
 		r.Route("/galleries", func(r chi.Router) {
-			r.Get("/{id}", galleriesC.Show)
 			r.Group(func(r chi.Router) {
 				r.Use(umw.RequireUser)
 				r.Get("/", galleriesC.Index)
 				r.Get("/new", galleriesC.New)
 				r.Post("/", galleriesC.Create)
+				r.Get("/{id}", galleriesC.Show)
 				r.Get("/{id}/edit", galleriesC.Edit)
 				r.Post("/{id}", galleriesC.Update)
 				r.Post("/{id}/delete", galleriesC.Delete)
 				r.Post("/{id}/images", galleriesC.UploadImage)
+				r.Post("/{id}/sharing", galleriesC.SetSharing)
 				r.Post("/{id}/tokens", galleriesC.CreateToken)
 				r.Post("/{id}/tokens/{tokenID}/delete", galleriesC.DeleteToken)
 			})
