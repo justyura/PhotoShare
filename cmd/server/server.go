@@ -20,9 +20,10 @@ import (
 )
 
 type config struct {
-	PSQL models.PostgresConfig
-	SMTP models.SMTPConfig
-	CSRF struct {
+	PSQL     models.PostgresConfig
+	SMTP     models.SMTPConfig
+	SMTPFrom string
+	CSRF     struct {
 		Key    string
 		Secure bool
 	}
@@ -58,6 +59,7 @@ func loadENVConfig() (config, error) {
 	}
 	cfg.SMTP.Username = os.Getenv("SMTP_USERNAME")
 	cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
+	cfg.SMTPFrom = os.Getenv("SMTP_FROM")
 	cfg.CSRF.Key = os.Getenv("CSRF_KEY")
 	cfg.CSRF.Secure = os.Getenv("CSRF_SECURE") == "true"
 
@@ -113,6 +115,7 @@ func main() {
 	}
 
 	emailService := models.NewEmailService(cfg.SMTP)
+	emailService.DefaultSender = cfg.SMTPFrom
 
 	// Set up middlewares
 	umw := controllers.UserMiddleware{
