@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/z-wentao/PhotoShare/context"
 	"github.com/z-wentao/PhotoShare/errors"
@@ -22,6 +23,7 @@ type Users struct {
 	SessionService       *models.SessionService
 	PasswordResetService *models.PasswordResetService
 	EmailService         *models.EmailService
+	BaseURL              string
 }
 
 type UserMiddleware struct {
@@ -180,8 +182,7 @@ func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
 		"token": {pwReset.Token},
 	}
 
-	// TODO: make the url here configurable
-	resetURL := "http://localhost:3000/reset-pw?" + vals.Encode()
+	resetURL := strings.TrimRight(u.BaseURL, "/") + "/reset-pw?" + vals.Encode()
 	err = u.EmailService.ForgotPassword(data.Email, resetURL)
 	if err != nil {
 		fmt.Println(err)
